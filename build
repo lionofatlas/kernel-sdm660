@@ -2,7 +2,7 @@
 
 export KERNELNAME=Deagle
 
-export LOCALVERSION=V10
+export LOCALVERSION=Dangerous
 
 export KBUILD_BUILD_USER=builder
 
@@ -10,7 +10,7 @@ export KBUILD_BUILD_HOST=deagle
 
 export TOOLCHAIN=clang
 
-export DEVICES=whyred,tulip,wayne
+export DEVICES=whyred
 
 source helper
 
@@ -22,14 +22,14 @@ START=$(date +"%s")
 
 for i in ${DEVICES//,/ }
 do
-	build ${i} -oldcam
+//	build ${i} -oldcam
 
-	build ${i} -newcam
+//	build ${i} -newcam
 done
 
 send_msg "Build OC..."
 
-git apply oc.patch
+//git apply oc.patch
 
 for i in ${DEVICES//,/ }
 do
