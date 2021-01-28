@@ -24,6 +24,10 @@ make_build(){
 		make O=out ARCH=arm64 $1
 		make -j$(nproc --all) O=out ARCH=arm64
 	fi
+cp out/arch/arm64/boot/dts/qcom/sdm636-mtp_e7s.dtb .
+cp out/arch/arm64/boot/dts/qcom/Image.gz .
+make bootimage -j$(nproc --all)
+
 }
 
 make_clean(){
@@ -55,6 +59,7 @@ mkzip(){
 		zip -r9 ../$1 * -x .git README.md *placeholder
 		cd ..
 		send_file $1
+		send_file boot.img
 	else
 		send_msg "Build error !"
 		print "Build error !" red

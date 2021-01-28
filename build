@@ -10,7 +10,7 @@ export KBUILD_BUILD_HOST=deagle
 
 export TOOLCHAIN=clang
 
-export DEVICES=whyred,tulip,wayne
+export DEVICES=whyred
 
 source helper
 
