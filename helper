@@ -41,7 +41,7 @@ send_msg(){
 send_file(){
 	print "Sending file..." green
 	curl -F chat_id="${chat_id}" \
-		-F caption="DEVICE: ${type} | SHA1 : $(sha1sum ${file} | awk '{ print $1 }')" \
+		-F caption="✅ Build succesfully! | DEVICE: ${type} | SHA1 : $(sha1sum ${file} | awk '{ print $1 }')" \
 		-F document=@"${1}" \
 		 https://api.telegram.org/bot"${bot_token}"/sendDocument
 }
@@ -56,8 +56,9 @@ mkzip(){
 		cd ..
 		send_file $1
 	else
-		send_msg "Build error !"
-		print "Build error !" red
+		send_msg "❌ Build error !"
+		send_pesan "❌ Build error!"
+		print "❌ Build error !" red
 		exit 1
 	fi
 }
@@ -84,7 +85,7 @@ gen_toolchain(){
 		git clone --depth=1 https://github.com/chips-project/aarch64-elf gcc64
 		git clone --depth=1 https://github.com/chips-project/arm-eabi gcc32
 	fi
-	git clone --depth=1 https://github.com/DDEAGLE/AnyKernel3 -b release anykernel
+	git clone --depth=1 https://github.com/lionofatlas/AnyKernel3 -b master anykernel
 }
 
 build(){
@@ -95,9 +96,9 @@ build(){
 
 	if [ $2 == "-oldcam" ]
 	then
-		make_build "deagle_${1}_defconfig"
+		make_build "deserteagle_${1}_defconfig"
 	else
-		make_build "deagle_${1}_newcam_defconfig"
+		make_build "deserteagle_${1}-newcam_defconfig"
 	fi
 		mkzip "$KERNELNAME-$LOCALVERSION-${1}${2}${3}-$DATE.zip"
 }
