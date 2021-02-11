@@ -1,5 +1,5 @@
 kind: pipeline
-name: deagle
+name: DesertEagle
 
 clone:
   depth: 1
