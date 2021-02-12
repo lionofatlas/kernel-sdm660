@@ -98,7 +98,7 @@ build(){
 	then
 		make_build "deserteagle_${1}_defconfig"
 	else
-		make_build "deserteagle_${1}-newcam_defconfig"
+		make_build "deserteagle_${1}_newcam_defconfig"
 	fi
 		mkzip "$KERNELNAME-$LOCALVERSION-${1}${2}${3}-$DATE.zip"
 }
