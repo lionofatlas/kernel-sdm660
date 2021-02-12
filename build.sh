@@ -10,7 +10,7 @@ export KBUILD_BUILD_HOST=id
 
 export TOOLCHAIN=clang
 
-export DEVICES=whyred,tulip
+export DEVICES=whyred,tulip,wayne
 
 export CI_ID=-1001277300644
 
@@ -20,7 +20,7 @@ source helper
 
 gen_toolchain
 
-send_msg "⏳ Start building ${KERNELNAME} ${LOCALVERSION} EAS | DEVICES: whyred - tulip"
+send_msg "⏳ Start building ${KERNELNAME} ${LOCALVERSION} EAS | DEVICES: whyred - tulip - wayne"
 
 START=$(date +"%s")
 
