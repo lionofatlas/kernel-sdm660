@@ -10,7 +10,7 @@ export KBUILD_BUILD_HOST=id
 
 export TOOLCHAIN=clang
 
-export DEVICES=whyred,tulip,a26x
+export DEVICES=whyred,tulip
 
 export CI_ID=-1001277300644
 
@@ -22,8 +22,6 @@ gen_toolchain
 
 send_msg "⏳ Start building ${KERNELNAME} ${LOCALVERSION} EAS | DEVICES: whyred - tulip"
 
-send_pesan "⏳ Start building ${KERNELNAME} ${LOCALVERSION} EAS | DEVICES: whyred - tulip"
-
 START=$(date +"%s")
 
 for i in ${DEVICES//,/ }
@@ -34,8 +32,6 @@ do
 done
 
 send_msg "⏳ Start building Overclock version | DEVICES: whyred - tulip"
-
-send_pesan "⏳ Start building Overclock version | DEVICES: whyred - tulip"
 
 git apply oc.patch
 
