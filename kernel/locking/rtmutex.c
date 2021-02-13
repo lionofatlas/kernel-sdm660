@@ -332,18 +332,6 @@ rt_mutex_dequeue_pi(struct task_struct *task, struct rt_mutex_waiter *waiter)
 	RB_CLEAR_NODE(&waiter->pi_tree_entry);
 }
 
-static void rt_mutex_adjust_prio(struct task_struct *p)
-{
-	struct task_struct *pi_task = NULL;
-
-	lockdep_assert_held(&p->pi_lock);
-
-	if (task_has_pi_waiters(p))
-		pi_task = task_top_pi_waiter(p)->task;
-
-	rt_mutex_setprio(p, pi_task);
-}
-
 /*
  * Deadlock detection is conditional:
  *
@@ -1478,7 +1466,7 @@ rt_mutex_fastunlock(struct rt_mutex *lock,
  */
 void __sched rt_mutex_lock_nested(struct rt_mutex *lock, unsigned int subclass)
 {
-	__rt_mutex_lock(lock, subclass);
+ rt_mutex_lock(lock, subclass);
 }
 EXPORT_SYMBOL_GPL(rt_mutex_lock_nested);
 
@@ -1521,15 +1509,13 @@ int __sched rt_mutex_lock_interruptible(struct rt_mutex *lock)
 EXPORT_SYMBOL_GPL(rt_mutex_lock_interruptible);
 
 /*
-
  * Futex variant with full deadlock detection.
  * Futex variants must not use the fast-path, see __rt_mutex_futex_unlock().
  */
 int __sched rt_mutex_timed_futex_lock(struct rt_mutex *lock,
 			      struct hrtimer_sleeper *timeout)
 {
-	return rt_mutex_slowtrylock(lock);
-}
+	might_sleep();
 
 	return rt_mutex_slowlock(lock, TASK_INTERRUPTIBLE,
 				 timeout, RT_MUTEX_FULL_CHAINWALK);
