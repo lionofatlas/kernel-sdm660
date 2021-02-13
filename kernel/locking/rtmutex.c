@@ -1324,7 +1324,8 @@ static inline int rt_mutex_slowtrylock(struct rt_mutex *lock)
 
 	ret = __rt_mutex_slowtrylock(lock);
 
-	raw_spin_unlock_irqrestore(&lock->wait_lock, flags);
+
+	raw_spin_unlock(&lock->wait_lock);
 
 	return ret;
 }
@@ -1341,8 +1342,6 @@ static bool __sched rt_mutex_slowunlock(struct rt_mutex *lock,
 
 	/* irqsave required to support early boot calls */
 	raw_spin_lock_irqsave(&lock->wait_lock, flags);
-
-	debug_rt_mutex_unlock(lock);
 
 	/*
 	 * We must be careful here if the fast path is enabled. If we
@@ -1455,20 +1454,19 @@ rt_mutex_fastunlock(struct rt_mutex *lock,
 				   struct wake_q_head *wqh))
 {
 	WAKE_Q(wake_q);
+	bool deboost;
 
 	if (likely(rt_mutex_cmpxchg_release(lock, current, NULL)))
 		return;
 
-	if (slowfn(lock, &wake_q))
-		rt_mutex_postunlock(&wake_q);
-}
+	deboost = slowfn(lock, &wake_q);
 
-static inline void __rt_mutex_lock(struct rt_mutex *lock, unsigned int subclass)
-{
-	might_sleep();
+	wake_up_q(&wake_q);
 
-	mutex_acquire(&lock->dep_map, subclass, 0, _RET_IP_);
-	rt_mutex_fastlock(lock, TASK_UNINTERRUPTIBLE, rt_mutex_slowlock);
+	/* Undo pi boosting if necessary: */
+	if (deboost)
+		rt_mutex_adjust_prio(current);
+
 }
 
 #ifdef CONFIG_DEBUG_LOCK_ALLOC
@@ -1521,6 +1519,21 @@ int __sched rt_mutex_lock_interruptible(struct rt_mutex *lock)
 	return ret;
 }
 EXPORT_SYMBOL_GPL(rt_mutex_lock_interruptible);
+
+/*
+
+ * Futex variant with full deadlock detection.
+ * Futex variants must not use the fast-path, see __rt_mutex_futex_unlock().
+ */
+int __sched rt_mutex_timed_futex_lock(struct rt_mutex *lock,
+			      struct hrtimer_sleeper *timeout)
+{
+	return rt_mutex_slowtrylock(lock);
+}
+
+	return rt_mutex_slowlock(lock, TASK_INTERRUPTIBLE,
+				 timeout, RT_MUTEX_FULL_CHAINWALK);
+}
 
 /*
  * Futex variant, must not use fastpath.
@@ -1620,29 +1633,24 @@ bool __sched __rt_mutex_futex_unlock(struct rt_mutex *lock,
 		return false; /* done */
 	}
 
-	/*
-	 * We've already deboosted, mark_wakeup_next_waiter() will
-	 * retain preempt_disabled when we drop the wait_lock, to
-	 * avoid inversion prior to the wakeup.  preempt_disable()
-	 * therein pairs with rt_mutex_postunlock().
-	 */
 	mark_wakeup_next_waiter(wake_q, lock);
-
-	return true; /* call postunlock() */
+	return true; /* deboost and wakeups */
 }
 
 void __sched rt_mutex_futex_unlock(struct rt_mutex *lock)
 {
 	WAKE_Q(wake_q);
-	unsigned long flags;
-	bool postunlock;
+	bool deboost;
 
-	raw_spin_lock_irqsave(&lock->wait_lock, flags);
-	postunlock = __rt_mutex_futex_unlock(lock, &wake_q);
-	raw_spin_unlock_irqrestore(&lock->wait_lock, flags);
+	raw_spin_lock_irq(&lock->wait_lock);
+	deboost = __rt_mutex_futex_unlock(lock, &wake_q);
+	raw_spin_unlock_irq(&lock->wait_lock);
 
-	if (postunlock)
-		rt_mutex_postunlock(&wake_q);
+	if (deboost) {
+		wake_up_q(&wake_q);
+		rt_mutex_adjust_prio(current);
+	}
+
 }
 
 /**
@@ -1717,8 +1725,7 @@ void rt_mutex_init_proxy_locked(struct rt_mutex *lock,
  * possible because it belongs to the pi_state which is about to be freed
  * and it is not longer visible to other tasks.
  */
-void rt_mutex_proxy_unlock(struct rt_mutex *lock,
-			   struct task_struct *proxy_owner)
+void rt_mutex_proxy_unlock(struct rt_mutex *lock)
 {
 	debug_rt_mutex_proxy_unlock(lock);
 	rt_mutex_set_owner(lock, NULL);

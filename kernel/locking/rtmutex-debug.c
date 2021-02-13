@@ -172,9 +172,5 @@ void debug_rt_mutex_init(struct rt_mutex *lock, const char *name, struct lock_cl
 	 */
 	debug_check_no_locks_freed((void *)lock, sizeof(*lock));
 	lock->name = name;
-
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-	lockdep_init_map(&lock->dep_map, name, key, 0);
-#endif
 }
 
