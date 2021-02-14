@@ -53,6 +53,7 @@ ifeq ($(CONFIG_COMPAT_VDSO), y)
   else ifeq ($(shell which $(CROSS_COMPILE_ARM32)$(cc-name) 2> /dev/null),)
     $(error $(CROSS_COMPILE_ARM32)$(cc-name) not found, check CROSS_COMPILE_ARM32)
   else
+    export CLANG_PREFIX32 := --prefix=$(GCC_TOOLCHAIN32_DIR)$(notdir $(CROSS_COMPILE_ARM32))
     export CROSS_COMPILE_ARM32
     export CONFIG_VDSO32 := y
     vdso32 := -DCONFIG_VDSO32=1
